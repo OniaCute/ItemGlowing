@@ -1,0 +1,18 @@
+name: ItemGlowing
+version: '1.0.0'
+main: cc.oniacute.plugin.itemglowing.ItemGlowing
+api-version: '1.21'
+prefix: ItemGlowing
+authors: [ OniaCute ]
+description: A drop item display plugin that supports glowing, nametag, despawn timer and quality-based colors.
+website: www.oniacute.cc
+
+commands:
+  itemglowing:
+    description: ItemGlowing administration command
+    usage: /itemglowing <add|remove|reload|timeset|setrarity>
+
+permissions:
+  itemglowing.admin:
+    description: Allows administrative actions for ItemGlowing
+    default: op
