@@ -30,12 +30,26 @@ despawnRare:     300
 despawnEpic:     400
 despawnLegend:   500
 
+# 物品倒计时到期消失时是否播放黑烟粒子效果
+despawnEffect: true
+
+# 黑烟粒子效果持续时长，单位：Tick（1 秒 = 20 Tick，最低 1）
+despawnEffectDuration: 20
+
+# 黑烟粒子效果的高度偏移量（格）
+despawnEffectOffset: 0.3
+
 # 只有玩家在指定半径内时才显示发光和名牌
 # 设为 -1 则始终显示（不受距离限制）
 radius: -1
 
 # 主循环检测间隔，单位：Tick（最低 1）
 detectTimer: 2
+
+# 禁用的世界（在此列表中的世界不显示 glow 和 nametag，但倒计时仍正常运行）
+# 使用世界名（与 Bukkit 的 World#getName() 一致，区分大小写）
+disabledWorlds:
+  - "world_the_end"
 
 # 语言/消息配置
 # 支持 & 颜色码和 &#RRGGBB 十六进制颜色

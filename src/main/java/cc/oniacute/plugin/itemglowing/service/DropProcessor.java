@@ -8,6 +8,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
@@ -37,15 +38,18 @@ public final class DropProcessor {
     private final ConfigManager configManager;
     private final DropItemTracker tracker;
     private final GlowService glowService;
+    private final DespawnEffectService effectService;
 
     private BukkitTask task;
 
     public DropProcessor(JavaPlugin plugin, ConfigManager configManager,
-                         DropItemTracker tracker, GlowService glowService) {
+                         DropItemTracker tracker, GlowService glowService,
+                         DespawnEffectService effectService) {
         this.plugin = plugin;
         this.configManager = configManager;
         this.tracker = tracker;
         this.glowService = glowService;
+        this.effectService = effectService;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -90,7 +94,7 @@ public final class DropProcessor {
     }
 
     private void processItem(TrackedItem tracked, PluginConfig cfg,
-                              long now, Iterator<TrackedItem> it) {
+                               long now, Iterator<TrackedItem> it) {
         // ── 1. 实体有效性检查 ────────────────────────────────────────────────
         Entity entity = Bukkit.getEntity(tracked.entityId);
         if (entity == null || entity.isDead() || !(entity instanceof Item item)) {
@@ -101,17 +105,39 @@ public final class DropProcessor {
         // ── 2. 倒计时到期 ────────────────────────────────────────────────────
         long remainMillis = tracked.despawnAtMillis - now;
         if (remainMillis <= 0) {
+            // 先快照位置，再移除实体（实体移除后 location 可能失效）
+            Location despawnLoc = item.getLocation();
             glowService.removeGlow(item, tracked.lastGlowColor);
             item.setCustomNameVisible(false);
             item.remove();
             it.remove();
+            // 播放黑烟粒子特效（位置已快照，安全）
+            effectService.play(despawnLoc, cfg);
             return;
         }
         int remainSeconds = (int) (remainMillis / 1000L);
 
         ItemStack stack = item.getItemStack();
 
-        // ── 3. radius 视距过滤 ───────────────────────────────────────────────
+        // ── 3. 禁用世界过滤 ──────────────────────────────────────────────────
+        // 在禁用世界中：只跳过视觉显示，倒计时继续运行
+        World world = item.getWorld();
+        if (cfg.disabledWorlds.contains(world.getName())) {
+            // 清除可能残留的视觉效果
+            if (tracked.lastGlowColor != null || item.isGlowing()) {
+                glowService.removeGlow(item, tracked.lastGlowColor);
+                tracked.lastGlowColor = null;
+            }
+            if (item.isCustomNameVisible()) {
+                item.setCustomNameVisible(false);
+            }
+            // 重置刷新状态，以便物品重新进入启用世界时能立即刷新
+            tracked.lastShownSecond = -1;
+            tracked.lastVisible = false;
+            return;
+        }
+
+        // ── 4. radius 视距过滤 ───────────────────────────────────────────────
         if (cfg.radius >= 0) {
             boolean hasNearby = hasPlayerNearby(item.getLocation(), cfg.radius);
             if (!hasNearby) {
@@ -128,9 +154,14 @@ public final class DropProcessor {
                 tracked.lastShownSecond = -1;
                 tracked.lastGlowColor = null;
             }
+        } else if (!tracked.lastVisible) {
+            // radius = -1（始终显示），但上次因禁用世界/radius 被隐藏，现在重新启用
+            tracked.lastVisible = true;
+            tracked.lastShownSecond = -1;
+            tracked.lastGlowColor = null;
         }
 
-        // ── 4. 发光 ──────────────────────────────────────────────────────────
+        // ── 5. 发光 ──────────────────────────────────────────────────────────
         if (cfg.glowing) {
             TextColor qualityColor = cfg.colorFor(tracked.quality);
             NamedTextColor newGlowColor = glowService.applyGlow(item, qualityColor, tracked.lastGlowColor);
@@ -142,7 +173,7 @@ public final class DropProcessor {
             }
         }
 
-        // ── 5. 名牌 ──────────────────────────────────────────────────────────
+        // ── 6. 名牌 ──────────────────────────────────────────────────────────
         if (!cfg.nametagTemplate.isEmpty()) {
             if (remainSeconds != tracked.lastShownSecond) {
                 Component nametag = NameTagService.build(cfg, stack, tracked.quality, remainSeconds);

@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.HashSet;
 
 /**
  * 插件配置的不可变快照。
@@ -62,6 +63,23 @@ public final class PluginConfig {
     /** 已校验的 Material 忽略集合 */
     public final Set<Material> ignoredItems;
 
+    // ── 消失特效 ──────────────────────────────────────────────────────────────
+    /** 是否在倒计时到期消失时播放黑烟粒子效果 */
+    public final boolean despawnEffect;
+
+    /** 黑烟粒子效果持续时长（Tick，最低 1） */
+    public final int despawnEffectDurationTicks;
+
+    /** 黑烟粒子效果的高度偏移量（格） */
+    public final double despawnEffectOffset;
+
+    // ── 禁用世界 ──────────────────────────────────────────────────────────────
+    /**
+     * 禁用世界名称集合（World#getName() 区分大小写）。
+     * 在此集合中的世界只跳过视觉效果（glow + nametag），倒计时仍正常运行。
+     */
+    public final Set<String> disabledWorlds;
+
     public PluginConfig(
             boolean glowing,
             Map<ItemQuality, TextColor> qualityColors,
@@ -70,7 +88,11 @@ public final class PluginConfig {
             int radius,
             int detectTimerTicks,
             Map<String, String> messages,
-            Set<Material> ignoredItems) {
+            Set<Material> ignoredItems,
+            boolean despawnEffect,
+            int despawnEffectDurationTicks,
+            double despawnEffectOffset,
+            Set<String> disabledWorlds) {
         this.glowing = glowing;
         this.qualityColors = Collections.unmodifiableMap(new EnumMap<>(qualityColors));
         this.nametagTemplate = nametagTemplate != null ? nametagTemplate : "";
@@ -79,6 +101,10 @@ public final class PluginConfig {
         this.detectTimerTicks = Math.max(1, detectTimerTicks);
         this.messages = Collections.unmodifiableMap(messages);
         this.ignoredItems = Collections.unmodifiableSet(ignoredItems);
+        this.despawnEffect = despawnEffect;
+        this.despawnEffectDurationTicks = Math.max(1, despawnEffectDurationTicks);
+        this.despawnEffectOffset = despawnEffectOffset;
+        this.disabledWorlds = Collections.unmodifiableSet(new HashSet<>(disabledWorlds));
     }
 
     // ── 便捷访问器 ────────────────────────────────────────────────────────────

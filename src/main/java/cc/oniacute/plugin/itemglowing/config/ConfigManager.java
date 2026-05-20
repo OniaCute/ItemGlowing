@@ -12,6 +12,7 @@ import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * 配置管理器：负责加载、解析、保存和热重载配置。
@@ -186,10 +187,30 @@ public final class ConfigManager {
             }
         }
 
+        // ── despawnEffect ────────────────────────────────────────────────────
+        boolean despawnEffect = fc.getBoolean("despawnEffect", true);
+
+        int despawnEffectDurationTicks = fc.getInt("despawnEffectDuration", 20);
+        if (despawnEffectDurationTicks < 1) {
+            plugin.getLogger().warning("[ConfigManager] despawnEffectDuration 值无效（< 1），已重置为 1");
+            despawnEffectDurationTicks = 1;
+        }
+
+        double despawnEffectOffset = fc.getDouble("despawnEffectOffset", 0.3);
+        // 兼容 REFERENCE.md 中的笔误字段名 despawnEffectOffest
+        if (!fc.contains("despawnEffectOffset") && fc.contains("despawnEffectOffest")) {
+            despawnEffectOffset = fc.getDouble("despawnEffectOffest", 0.3);
+        }
+
+        // ── disabledWorlds ────────────────────────────────────────────────────
+        Set<String> disabledWorlds = new LinkedHashSet<>(fc.getStringList("disabledWorlds"));
+
         return new PluginConfig(
                 glowing, qualityColors,
                 nametagTemplate, despawnMap, radius, detectTimerTicks,
-                messages, ignoredItems
+                messages, ignoredItems,
+                despawnEffect, despawnEffectDurationTicks, despawnEffectOffset,
+                disabledWorlds
         );
     }
 

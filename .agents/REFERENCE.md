@@ -31,10 +31,10 @@ glowing: true
 
 # 物品发光颜色
 commonColor: '#ffffff'
-uncommonColor: '#fff8b9'
+uncommonColor: '#fff6a7'
 rareColor: "#2dabff"
 epicColor: "#dc67ff"
-legendColor: "#ffbe3c"
+legendColor: "#ffb727"
 
 
 # 显示的名牌样式, 如果为""则不显示.
@@ -47,11 +47,25 @@ despawnRare: 300
 despawnEpic: 400
 despawnLegend: 500
 
+# 物品消失黑烟效果
+despawnEffect: true
+
+# 物品消失效果持续时长, 单位为Tick
+despawnEffectDuration: 1
+
+# 物品消失效果高度偏移量
+despawnEffectOffset: 0.3
+
 # 只有物品半径内有玩家才显示glow和nametag, 如果为-1则始终显示
 radius: -1
 
 # 检测时间间隔, 单位为Tick, 最低为1即每tick都检测
 detectTimer: 2
+
+# 禁用的世界
+disabledWorlds: [
+    the_end_world # 末地
+]
 
 # 语言项
 messages: {

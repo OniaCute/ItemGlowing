@@ -10,6 +10,7 @@ import cc.oniacute.plugin.itemglowing.quality.ItemQuality;
 import cc.oniacute.plugin.itemglowing.quality.QualityResolver;
 import cc.oniacute.plugin.itemglowing.quality.RarityManager;
 import cc.oniacute.plugin.itemglowing.service.DropItemTracker;
+import cc.oniacute.plugin.itemglowing.service.DespawnEffectService;
 import cc.oniacute.plugin.itemglowing.service.DropProcessor;
 import cc.oniacute.plugin.itemglowing.service.GlowService;
 import cc.oniacute.plugin.itemglowing.util.HexToNamedColor;
@@ -33,12 +34,13 @@ public final class ItemGlowing extends JavaPlugin {
 
     private static ItemGlowing instance;
 
-    private ConfigManager  configManager;
-    private RarityManager  rarityManager;
-    private QualityResolver qualityResolver;
-    private DropItemTracker tracker;
-    private GlowService    glowService;
-    private DropProcessor  dropProcessor;
+    private ConfigManager       configManager;
+    private RarityManager       rarityManager;
+    private QualityResolver     qualityResolver;
+    private DropItemTracker     tracker;
+    private GlowService         glowService;
+    private DespawnEffectService effectService;
+    private DropProcessor        dropProcessor;
 
     @Override
     public void onEnable() {
@@ -63,7 +65,8 @@ public final class ItemGlowing extends JavaPlugin {
         qualityResolver = new QualityResolver(this, rarityManager);
         tracker         = new DropItemTracker();
         glowService     = new GlowService();
-        dropProcessor   = new DropProcessor(this, configManager, tracker, glowService);
+        effectService   = new DespawnEffectService(this);
+        dropProcessor   = new DropProcessor(this, configManager, tracker, glowService, effectService);
 
         // ── 4. 注册事件监听器 ────────────────────────────────────────────────
         PluginManager pm = getServer().getPluginManager();
@@ -96,6 +99,11 @@ public final class ItemGlowing extends JavaPlugin {
         // ── 1. 停止主循环 ────────────────────────────────────────────────────
         if (dropProcessor != null) {
             dropProcessor.stop();
+        }
+
+        // ── 1.5 取消所有正在播放的黑烟特效 ──────────────────────────────────
+        if (effectService != null) {
+            effectService.cancelAll();
         }
 
         // ── 2. 清理追踪中实体的视觉效果 ─────────────────────────────────────
